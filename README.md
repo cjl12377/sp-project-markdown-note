@@ -35,7 +35,7 @@ It replaces the built-in project notes with a real `.md` file, so the same note 
 
 ## Install
 
-1. Download [project-markdown-note-0.2.0.zip](https://github.com/cjl12377/sp-project-markdown-note/raw/main/releases/v0.2.0/project-markdown-note-0.2.0.zip) (all versions are in [`releases/`](releases)).
+1. Download [project-markdown-note-0.2.1.zip](https://github.com/cjl12377/sp-project-markdown-note/raw/main/releases/v0.2.1/project-markdown-note-0.2.1.zip) (all versions are in [`releases/`](releases)).
 2. In Super Productivity open **Settings → Plugins → Choose Plugin File** and pick the zip.
 3. Enable **Project Markdown Note**. When asked whether it may access your files, choose **Allow**. If you chose Deny, disable and re-enable the plugin to get the prompt again.
 4. Open a project and click the note icon at the top right to open the side panel.
