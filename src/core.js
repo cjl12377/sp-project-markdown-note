@@ -177,7 +177,26 @@ const tagExtension = {
   },
 };
 
-const isRemoteSrc = (href) => /^(https?:|data:image\/)/i.test(href);
+// ---------- ==highlights== ----------
+
+const highlightExtension = {
+  name: 'highlight',
+  level: 'inline',
+  start(src) {
+    const i = src.indexOf('==');
+    return i === -1 ? undefined : i;
+  },
+  tokenizer(src) {
+    const m = /^==(?=[^\s=])((?:[^\n=]|=(?!=))*?[^\s=])==(?!=)/.exec(src);
+    if (!m) return undefined;
+    return { type: 'highlight', raw: m[0], tokens: this.lexer.inlineTokens(m[1]) };
+  },
+  renderer(tok) {
+    return `<mark>${this.parser.parseInline(tok.tokens)}</mark>`;
+  },
+};
+
+const isRemoteSrc =(href) => /^(https?:|data:image\/)/i.test(href);
 
 // Raw HTML in notes is shown as text, except a few attribute-less formatting
 // tags. Together with the link check below this makes the preview safe without
@@ -199,7 +218,7 @@ export const isSafeHref = (href) => SAFE_LINK_RE.test(String(href).replace(/[\u0
 export const createMarkdownRenderer = (Marked) => {
   const md = new Marked({ gfm: true, breaks: true });
   md.use({
-    extensions: [calloutExtension, wikilinkExtension, tagExtension],
+    extensions: [calloutExtension, wikilinkExtension, tagExtension, highlightExtension],
     renderer: {
       html({ text }) {
         return renderRawHtml(text);
@@ -368,23 +387,60 @@ const normHeading = (h) =>
     .trim()
     .toLowerCase();
 
+const LIST_ITEM_RE = /^\s*(?:[-*+]|\d+[.)])\s/;
+const isListItem = (l) => LIST_ITEM_RE.test(l);
+const indentOf = (l) => l.match(/^[ \t]*/)[0].replace(/\t/g, '    ').length;
+
+/** First line of the block that ends at line `end` (a loose list spans blank lines). */
+const blockStart = (lines, end) => {
+  const up = (s) => {
+    while (s > 0 && lines[s - 1].trim() && !HEADING_RE.test(lines[s - 1])) s--;
+    return s;
+  };
+  let start = up(end);
+  while (start > 0 && (isListItem(lines[start]) || indentOf(lines[start]) > 0)) {
+    let j = start - 1;
+    while (j >= 0 && !lines[j].trim()) j--;
+    if (j < 0 || j === start - 1 || HEADING_RE.test(lines[j])) break;
+    if (!isListItem(lines[j]) && indentOf(lines[j]) === 0) break;
+    start = up(j);
+  }
+  return start;
+};
+
 /** Pick the part of a note an embed points at: #Heading, #^block-id, or all of it. */
 export const extractSection = (src, anchor) => {
   const body = splitFrontmatter(src).body;
   if (!anchor) return body;
   const lines = body.split('\n');
   if (anchor.startsWith('^')) {
-    const id = anchor.slice(1);
-    const re = new RegExp(`\\s\\^${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`);
-    const i = lines.findIndex((l) => re.test(l));
+    const esc = anchor.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const endRe = new RegExp(`\\s\\^${esc}\\s*$`);
+    const ownRe = new RegExp(`^\\s*\\^${esc}\\s*$`);
+    const i = lines.findIndex((l) => endRe.test(l) || ownRe.test(l));
     if (i === -1) return null;
-    const isItem = /^\s*(?:[-*+]|\d+[.)])\s/.test(lines[i]);
-    let start = i;
-    if (!isItem) while (start > 0 && lines[start - 1].trim() && !HEADING_RE.test(lines[start - 1])) start--;
+    if (ownRe.test(lines[i])) {
+      // Obsidian puts the id on its own line after a list, quote or table.
+      let end = i - 1;
+      while (end >= 0 && !lines[end].trim()) end--;
+      if (end < 0) return null;
+      return lines.slice(blockStart(lines, end), end + 1).join('\n');
+    }
+    if (isListItem(lines[i])) {
+      // A list item brings its indented children along.
+      const base = indentOf(lines[i]);
+      let end = i;
+      for (let k = i + 1; k < lines.length; k++) {
+        if (!lines[k].trim()) continue;
+        if (indentOf(lines[k]) <= base) break;
+        end = k;
+      }
+      return [lines[i].replace(endRe, ''), ...lines.slice(i + 1, end + 1)].join('\n');
+    }
     return lines
-      .slice(start, i + 1)
+      .slice(blockStart(lines, i), i + 1)
       .join('\n')
-      .replace(re, '');
+      .replace(endRe, '');
   }
   const want = normHeading(anchor.split('#').pop());
   let fence = false;

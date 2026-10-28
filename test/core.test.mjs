@@ -207,6 +207,46 @@ test('extractSection: whole note, heading, nested headings, block ids', () => {
   assert.equal(extractSection(src, '^zz'), null);
 });
 
+test('extractSection: block id on its own line takes the whole list', () => {
+  const src = [
+    '# Qs',
+    '',
+    '1. ==First?==',
+    '\t> rationale',
+    '\t>',
+    '\t> more',
+    '',
+    '2. ==Second?==',
+    '\t> why',
+    '3. ==Third?==',
+    '',
+    '^c01c80',
+    '',
+    'after',
+    '',
+    '> quoted',
+    '> text',
+    '',
+    '^q1',
+    '',
+    '- parent ^par',
+    '    - child',
+    '- sibling',
+  ].join('\n');
+  assert.equal(
+    extractSection(src, '^c01c80'),
+    '1. ==First?==\n\t> rationale\n\t>\n\t> more\n\n2. ==Second?==\n\t> why\n3. ==Third?==',
+  );
+  assert.equal(extractSection(src, '^q1'), '> quoted\n> text');
+  assert.equal(extractSection(src, '^par'), '- parent\n    - child');
+});
+
+test('==highlights== render as <mark>', () => {
+  const md = createMarkdownRenderer(Marked);
+  assert.match(md('a ==b *c*== d'), /<mark>b <em>c<\/em><\/mark>/);
+  assert.doesNotMatch(md('1 == 2 and x==y'), /<mark>/);
+});
+
 test('daily note paths and templates', () => {
   const d = new Date(2026, 0, 4, 9, 5);
   assert.equal(formatDate(d, 'YYYY-MM-DD'), '2026-01-04');

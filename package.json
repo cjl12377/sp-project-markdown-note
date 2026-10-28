@@ -1,6 +1,6 @@
 {
   "name": "sp-project-markdown-note",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Super Productivity plugin: link each project to a local markdown file (e.g. an Obsidian note) and preview/edit it inside the app.",
   "license": "MIT",

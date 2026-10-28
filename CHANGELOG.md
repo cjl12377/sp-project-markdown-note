@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 — 2026-10-28
+
+- Fixed `![[Note#^block-id]]` when the id sits on its own line after a list, quote or table (how Obsidian writes it): the whole block now embeds. A block id on a list item brings its indented children.
+- `==highlighted text==` now renders as a highlight.
+
 ## 0.2.0 — 2026-10-28
 
 - Daily note in the Today view, using Obsidian's daily-notes settings or your own; create today's note from a template.
