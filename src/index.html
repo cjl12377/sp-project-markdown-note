@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Project Markdown Note</title>
+    <style>
+      :root {
+        --mn-gap: var(--s, 8px);
+        --mn-border: var(--divider-color, rgba(127, 127, 127, 0.25));
+        --mn-muted: var(--text-color-muted, #888);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: var(--bg, transparent);
+        color: var(--text-color, inherit);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 14px;
+        overflow: hidden;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      p,
+      li {
+        text-align: left;
+      }
+      /* The host's font stack lists emoji fonts before system fonts and the
+         iframe lacks its web font, which renders spaces too wide. */
+      button,
+      input,
+      select,
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: inherit;
+      }
+      select {
+        max-width: 100%;
+      }
+      @media (max-width: 559px) {
+        .bar .title {
+          flex-basis: 100%;
+        }
+        .bar .actions {
+          margin-left: auto;
+        }
+      }
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: var(--mn-gap);
+        padding: var(--mn-gap);
+        border-bottom: 1px solid var(--mn-border);
+        flex-wrap: wrap;
+        position: relative;
+      }
+      .bar .title {
+        flex: 1 1 140px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .bar .title b {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .bar .file {
+        font-size: 12px;
+        color: var(--mn-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .bar .actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .bar button {
+        padding: 2px 8px;
+        min-height: 28px;
+      }
+      .seg {
+        display: inline-flex;
+      }
+      .seg button {
+        border-radius: 0;
+      }
+      .seg button:first-child {
+        border-radius: 4px 0 0 4px;
+      }
+      .seg button:last-child {
+        border-radius: 0 4px 4px 0;
+      }
+      .seg button.active {
+        background: var(--c-primary, #3f51b5);
+        color: #fff;
+        border-color: var(--c-primary, #3f51b5);
+      }
+      .status {
+        font-size: 12px;
+        color: var(--mn-muted);
+        white-space: nowrap;
+      }
+      .status.warn {
+        color: var(--c-warn, #e53935);
+      }
+      .menu {
+        position: absolute;
+        right: var(--mn-gap);
+        top: 100%;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        min-width: 190px;
+        padding: 4px;
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--mn-border);
+        border-radius: 6px;
+        box-shadow: var(--whiteframe-shadow-4dp, 0 2px 8px rgba(0, 0, 0, 0.2));
+      }
+      .menu button {
+        text-align: left;
+        border: 0;
+        background: transparent;
+      }
+      .menu button:hover {
+        background: var(--bg-darker, rgba(127, 127, 127, 0.12));
+      }
+      main {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+      }
+      main > section {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: var(--s2, 16px);
+      }
+      #viewNote {
+        padding: 0;
+        overflow: hidden;
+      }
+      .note {
+        display: flex;
+        height: 100%;
+      }
+      .note.split > * {
+        width: 50%;
+      }
+      .note.split #editor {
+        border-right: 1px solid var(--mn-border);
+      }
+      #editor {
+        flex: 1;
+        height: 100%;
+        width: 100%;
+        resize: none;
+        border: 0;
+        border-radius: 0;
+        outline: none;
+        padding: var(--s2, 16px);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.55;
+        background: transparent;
+        color: inherit;
+        tab-size: 4;
+      }
+      #preview {
+        flex: 1;
+        height: 100%;
+        overflow: auto;
+        padding: var(--s2, 16px);
+      }
+      .md {
+        line-height: 1.6;
+        word-wrap: break-word;
+      }
+      .md > :first-child {
+        margin-top: 0;
+      }
+      .md img {
+        max-width: 100%;
+      }
+      .md pre {
+        overflow: auto;
+        padding: 8px;
+        border-radius: 4px;
+        background: var(--bg-darker, rgba(127, 127, 127, 0.12));
+      }
+      .md blockquote {
+        margin: 0.5em 0;
+        padding-left: 12px;
+        border-left: 3px solid var(--c-primary, #888);
+        color: var(--mn-muted);
+      }
+      .md table {
+        border-collapse: collapse;
+      }
+      .md th,
+      .md td {
+        border: 1px solid var(--mn-border);
+        padding: 4px 8px;
+      }
+      .md li:has(> input[type='checkbox']) {
+        list-style: none;
+        margin-left: -1.3em;
+      }
+      .md input[type='checkbox'] {
+        cursor: pointer;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      .md a.wikilink {
+        color: var(--c-accent, var(--c-primary, #7c4dff));
+      }
+      .md a.wikilink-embed {
+        font-style: italic;
+      }
+      .md .img-missing {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 12px;
+        color: var(--mn-muted);
+        border: 1px dashed var(--mn-border);
+        border-radius: 4px;
+      }
+      .empty-preview {
+        color: var(--mn-muted);
+        font-style: italic;
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+        font-weight: 600;
+      }
+      input[type='text'] {
+        width: 100%;
+      }
+      .row {
+        display: flex;
+        gap: var(--mn-gap);
+        align-items: center;
+        margin-top: var(--mn-gap);
+        flex-wrap: wrap;
+      }
+      .row input[type='text'] {
+        flex: 1 1 200px;
+        width: auto;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--mn-muted);
+        margin: 4px 0;
+      }
+      .error {
+        color: var(--c-warn, #e53935);
+        margin-top: var(--mn-gap);
+        white-space: pre-wrap;
+      }
+      .tree {
+        margin-top: var(--mn-gap);
+        max-height: 50vh;
+        overflow: auto;
+        border: 1px solid var(--mn-border);
+        border-radius: 4px;
+        padding: 4px;
+      }
+      .tree details > div {
+        padding-left: 14px;
+      }
+      .tree summary {
+        cursor: pointer;
+        padding: 2px 4px;
+        user-select: none;
+      }
+      .tree .file-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 2px 4px;
+        border-radius: 3px;
+        cursor: pointer;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-height: 0;
+      }
+      .tree .file-btn:hover {
+        background: var(--bg-darker, rgba(127, 127, 127, 0.12));
+      }
+      .tree .file-btn small {
+        color: var(--mn-muted);
+        margin-left: 6px;
+      }
+      .tree .group-title {
+        font-size: 12px;
+        color: var(--mn-muted);
+        margin: 6px 4px 2px;
+      }
+      label.check {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-weight: normal;
+      }
+      textarea.io {
+        width: 100%;
+        min-height: 180px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+      .md a.tag {
+        display: inline-block;
+        padding: 0 6px;
+        border-radius: 10px;
+        font-size: 0.9em;
+        text-decoration: none;
+        background: rgba(124, 77, 255, 0.12);
+        color: var(--c-accent, #7c4dff);
+      }
+      .md .callout {
+        --cc: 64, 120, 230;
+        margin: 0.8em 0;
+        padding: 8px 12px;
+        border-left: 4px solid rgb(var(--cc));
+        border-radius: 6px;
+        background: rgba(var(--cc), 0.1);
+      }
+      .md .callout-teal {
+        --cc: 0, 150, 160;
+      }
+      .md .callout-green {
+        --cc: 40, 160, 80;
+      }
+      .md .callout-orange {
+        --cc: 230, 130, 20;
+      }
+      .md .callout-red {
+        --cc: 220, 60, 60;
+      }
+      .md .callout-purple {
+        --cc: 140, 90, 220;
+      }
+      .md .callout-grey {
+        --cc: 140, 140, 140;
+      }
+      .md .callout-title {
+        font-weight: 600;
+        color: rgb(var(--cc));
+        cursor: default;
+      }
+      .md summary.callout-title {
+        cursor: pointer;
+      }
+      .md .callout-icon {
+        margin-right: 6px;
+      }
+      .md .callout-content > :first-child {
+        margin-top: 4px;
+      }
+      .md .callout-content > :last-child {
+        margin-bottom: 0;
+      }
+      .md .mn-embed {
+        display: block;
+        margin: 0.6em 0;
+        padding: 4px 12px 8px;
+        border-left: 3px solid var(--c-primary, #888);
+        background: var(--bg-darker, rgba(127, 127, 127, 0.08));
+        border-radius: 4px;
+      }
+      .md .mn-embed-title {
+        display: block;
+        font-size: 12px;
+        margin-bottom: 4px;
+        text-decoration: none;
+      }
+      .md .mn-embed-body {
+        display: block;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--s2, 16px);
+        background: rgba(0, 0, 0, 0.35);
+      }
+      .modal-card {
+        max-width: 520px;
+        max-height: 90vh;
+        overflow: auto;
+        width: 100%;
+        padding: var(--s2, 16px);
+        background: var(--card-bg, #fff);
+        border-radius: 8px;
+        box-shadow: var(--whiteframe-shadow-8dp, 0 4px 16px rgba(0, 0, 0, 0.3));
+      }
+      .modal-card h3 {
+        margin: 0 0 8px;
+      }
+      .modal-buttons {
+        justify-content: flex-end;
+      }
+      .msg {
+        max-width: 520px;
+      }
+      .msg p {
+        margin: 0 0 var(--mn-gap);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header class="bar">
+        <div class="title">
+          <b id="projName">Project note</b>
+          <select id="projSelect" hidden></select>
+          <span
+            id="fileName"
+            class="file"
+          ></span>
+        </div>
+        <div class="actions">
+          <span
+            id="status"
+            class="status"
+          ></span>
+          <div
+            id="modeSeg"
+            class="seg"
+            hidden
+          >
+            <button data-mode="preview">Preview</button>
+            <button data-mode="edit">Edit</button>
+            <button data-mode="split">Split</button>
+          </div>
+          <button
+            id="btnExpand"
+            title="Open as full page"
+          >
+            ⤢
+          </button>
+          <button
+            id="btnMenu"
+            title="More"
+          >
+            ⋯
+          </button>
+        </div>
+        <div
+          id="menu"
+          class="menu"
+          hidden
+        >
+          <button data-act="open-obsidian">Open in Obsidian</button>
+          <button data-act="change">Change linked file…</button>
+          <button data-act="reload">Reload from disk</button>
+          <button data-act="unlink">Unlink file</button>
+          <button data-act="settings">Settings…</button>
+        </div>
+      </header>
+      <main>
+        <section
+          id="viewMessage"
+          class="msg"
+          hidden
+        ></section>
+
+        <section
+          id="viewSettings"
+          hidden
+        >
+          <h3 style="margin-top: 0">Settings</h3>
+          <p class="hint">
+            This computer: <b id="hostName"></b>. The folder is saved for this computer
+            only, so the same links work on each of your synced computers.
+          </p>
+          <label for="rootInput">Vault / notes folder on this computer</label>
+          <input
+            id="rootInput"
+            type="text"
+            placeholder="/Users/you/ObsidianVault"
+            spellcheck="false"
+          />
+          <p class="hint">Linked files are stored relative to this folder.</p>
+          <label for="vaultInput">Obsidian vault name (optional)</label>
+          <input
+            id="vaultInput"
+            type="text"
+            placeholder="Defaults to the folder name"
+            spellcheck="false"
+          />
+          <p class="hint">Used for "Open in Obsidian" and [[wikilinks]]. Shared across computers.</p>
+          <h4 style="margin: 20px 0 4px">Daily note in Today</h4>
+          <label class="check"
+            ><input
+              id="dailyEnabled"
+              type="checkbox"
+            />
+            Show today's daily note when the Today view is open</label
+          >
+          <p class="hint">Blank fields use your Obsidian daily-notes settings.</p>
+          <label for="dailyFolder">Folder (in the vault)</label>
+          <input
+            id="dailyFolder"
+            type="text"
+            spellcheck="false"
+          />
+          <label for="dailyFormat">Date format</label>
+          <input
+            id="dailyFormat"
+            type="text"
+            spellcheck="false"
+          />
+          <label for="dailyTemplate">Template for new daily notes</label>
+          <input
+            id="dailyTemplate"
+            type="text"
+            spellcheck="false"
+          />
+          <div class="row">
+            <button
+              id="btnSaveSettings"
+              class="btn-primary"
+            >
+              Save
+            </button>
+            <button id="btnSettingsBack">Back</button>
+          </div>
+          <div
+            id="settingsError"
+            class="error"
+          ></div>
+          <h4 style="margin: 24px 0 4px">Backup</h4>
+          <p class="hint">
+            Settings are also saved on this computer in <code id="backupPath">your home folder</code> and
+            restored automatically if the plugin is removed and installed again.
+          </p>
+          <div class="row">
+            <button id="btnExport">Export settings…</button>
+            <button id="btnImport">Import settings…</button>
+          </div>
+        </section>
+
+        <section
+          id="viewLink"
+          hidden
+        >
+          <h3
+            id="linkTitle"
+            style="margin-top: 0"
+          ></h3>
+          <div id="linkBrowse">
+            <input
+              id="linkSearch"
+              type="text"
+              placeholder="Search notes in your vault…"
+              spellcheck="false"
+            />
+            <div
+              id="linkTree"
+              class="tree"
+            ></div>
+            <div class="row">
+              <button id="btnRescan">Rescan folder</button>
+              <span
+                id="scanInfo"
+                class="hint"
+              ></span>
+            </div>
+          </div>
+          <div
+            id="linkNoRoot"
+            class="hint"
+            hidden
+          >
+            Set your vault folder in <a
+              href="#"
+              id="lnkOpenSettings"
+              >Settings</a
+            >
+            to browse notes, or paste a full path below.
+          </div>
+          <label for="linkPath">Or paste a full path to an existing .md file</label>
+          <div class="row">
+            <input
+              id="linkPath"
+              type="text"
+              placeholder="/Users/you/ObsidianVault/Projects/Alpha.md"
+              spellcheck="false"
+            />
+            <button
+              id="btnLinkPath"
+              class="btn-primary"
+            >
+              Link
+            </button>
+          </div>
+          <div
+            id="linkError"
+            class="error"
+          ></div>
+          <div class="row">
+            <button
+              id="btnLinkCancel"
+              hidden
+            >
+              Cancel
+            </button>
+          </div>
+        </section>
+
+        <section
+          id="viewNote"
+          hidden
+        >
+          <div
+            id="noteWrap"
+            class="note"
+          >
+            <textarea
+              id="editor"
+              spellcheck="true"
+              hidden
+            ></textarea>
+            <article
+              id="preview"
+              class="md"
+            ></article>
+          </div>
+        </section>
+      </main>
+      <div
+        id="modal"
+        class="modal"
+        hidden
+      >
+        <div
+          class="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modalTitle"
+        >
+          <h3 id="modalTitle"></h3>
+          <div id="modalBody"></div>
+          <div
+            id="modalButtons"
+            class="row modal-buttons"
+          ></div>
+        </div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

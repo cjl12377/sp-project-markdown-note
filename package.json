@@ -1,0 +1,18 @@
+{
+  "name": "sp-project-markdown-note",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Super Productivity plugin: link each project to a local markdown file (e.g. an Obsidian note) and preview/edit it inside the app.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "python3 scripts/build.py .",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "marked": "^17.0.6"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.11"
+  }
+}

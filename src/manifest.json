@@ -1,0 +1,22 @@
+{
+  "id": "project-markdown-note",
+  "name": "Project Markdown Note",
+  "version": "0.2.0",
+  "manifestVersion": 1,
+  "minSupVersion": "14.0.0",
+  "description": "Link each project to one local markdown file (e.g. an Obsidian note). Preview, edit and autosave it inside Super Productivity. Desktop only.",
+  "author": "Jeng Long",
+  "homepage": "https://github.com/cjl12377/sp-project-markdown-note",
+  "icon": "icon.svg",
+  "iFrame": true,
+  "sidePanel": true,
+  "hooks": [],
+  "permissions": [
+    "getAllProjects",
+    "persistDataSynced",
+    "loadSyncedData",
+    "showSnack",
+    "showIndexHtmlAsView",
+    "nodeExecution"
+  ]
+}
