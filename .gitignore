@@ -1,5 +1,5 @@
 node_modules/
 dist/
-*.zip
+/*.zip
 __pycache__/
 .DS_Store
